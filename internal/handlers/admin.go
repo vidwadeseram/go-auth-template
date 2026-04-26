@@ -174,7 +174,7 @@ func (h *AdminHandler) GetUserPermissions(c *gin.Context) {
 
 func (h *AdminHandler) handleError(c *gin.Context, err error) {
 	var appErr *dto.AppError
-	if err == dto.ErrNotFound {
+	if errors.Is(err, dto.ErrNotFound) {
 		WriteError(c, http.StatusNotFound, "NOT_FOUND", "User not found.")
 		return
 	}
