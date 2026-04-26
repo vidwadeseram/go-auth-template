@@ -70,7 +70,7 @@ echo "--- RBAC: Assign super_admin + test ---"
 CONTAINER=$(docker ps --filter "publish=8005" --format "{{.Names}}" | head -1)
 if [ -n "$CONTAINER" ]; then
   ADMIN_USER_ID=$(curl -s "$BASE_URL/auth/me" -H "Authorization: Bearer $ADMIN_TOKEN" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['user']['id'])")
-  docker exec "$CONTAINER" psql -U postgres -d go_auth_db -c "INSERT INTO user_roles (user_id, role_id) SELECT '$ADMIN_USER_ID', id FROM roles WHERE name='super_admin' ON CONFLICT DO NOTHING;" 2>/dev/null || true
+  docker exec "$CONTAINER" psql -U postgres -d authdb -c "INSERT INTO user_roles (user_id, role_id) SELECT '$ADMIN_USER_ID', id FROM roles WHERE name='super_admin' ON CONFLICT DO NOTHING;" 2>/dev/null || true
 fi
 ROLES=$(curl -s "$BASE_URL/admin/roles" -H "Authorization: Bearer $ADMIN_TOKEN")
 echo "$ROLES" | python3 -c "import sys,json; assert len(json.load(sys.stdin)['data']) > 0" && pass "GET /admin/roles" || fail "GET /admin/roles" "$ROLES"
