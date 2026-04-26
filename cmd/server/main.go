@@ -60,6 +60,9 @@ func main() {
 
 	router.GET("/health", healthHandler.Health)
 
+	router.StaticFile("/openapi.json", "./static/openapi.json")
+	router.StaticFile("/docs", "./static/swagger.html")
+
 	authGroup := router.Group("/api/v1/auth")
 	authGroup.POST("/register", authHandler.Register)
 	authGroup.POST("/login", authHandler.Login)
