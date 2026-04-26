@@ -202,3 +202,82 @@ func (s *AuthService) Me(ctx context.Context, userID uuid.UUID) (*models.User, e
 	}
 	return user, nil
 }
+
+func (s *AuthService) VerifyEmail(ctx context.Context, token string) error {
+	claims, err := s.tokenService.ParseToken(token, "verify")
+	if err != nil {
+		return err
+	}
+	userID, err := s.tokenService.Subject(claims)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("get user by id: %w", err)
+	}
+	if user == nil {
+		return dto.NewAppError(404, "USER_NOT_FOUND", "User not found.")
+	}
+	if user.IsVerified {
+		return dto.NewAppError(400, "ALREADY_VERIFIED", "Email is already verified.")
+	}
+
+	user.IsVerified = true
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return fmt.Errorf("update user: %w", err)
+	}
+	return nil
+}
+
+func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
+	user, err := s.userRepo.GetByEmail(ctx, strings.ToLower(strings.TrimSpace(email)))
+	if err != nil {
+		return fmt.Errorf("get user by email: %w", err)
+	}
+	if user == nil {
+		return nil
+	}
+
+	resetToken, err := s.tokenService.CreateVerificationToken(user.ID, user.Email)
+	if err != nil {
+		return fmt.Errorf("create reset token: %w", err)
+	}
+
+	body := fmt.Sprintf("Your password reset token is: %s", resetToken)
+	if err := s.mailer.Send(user.Email, "Password Reset", body); err != nil {
+		return fmt.Errorf("send reset email: %w", err)
+	}
+	return nil
+}
+
+func (s *AuthService) ResetPassword(ctx context.Context, token string, newPassword string) error {
+	claims, err := s.tokenService.ParseToken(token, "verify")
+	if err != nil {
+		return err
+	}
+	userID, err := s.tokenService.Subject(claims)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("get user by id: %w", err)
+	}
+	if user == nil {
+		return dto.NewAppError(404, "USER_NOT_FOUND", "User not found.")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	user.PasswordHash = string(hashedPassword)
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return fmt.Errorf("update user: %w", err)
+	}
+	return nil
+}

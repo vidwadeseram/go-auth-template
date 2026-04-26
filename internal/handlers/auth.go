@@ -107,6 +107,51 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	WriteData(c, http.StatusOK, dto.NewUserResponse(user))
 }
 
+func (h *AuthHandler) VerifyEmail(c *gin.Context) {
+	var input dto.VerifyEmailRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		WriteError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "Invalid request payload.")
+		return
+	}
+
+	if err := h.authService.VerifyEmail(c.Request.Context(), input.Token); err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	WriteData(c, http.StatusOK, dto.MessageData{Message: "Email verified successfully."})
+}
+
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var input dto.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		WriteError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "Invalid request payload.")
+		return
+	}
+
+	if err := h.authService.ForgotPassword(c.Request.Context(), input.Email); err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	WriteData(c, http.StatusOK, dto.MessageData{Message: "If an account with that email exists, a reset link has been sent."})
+}
+
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var input dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		WriteError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "Invalid request payload.")
+		return
+	}
+
+	if err := h.authService.ResetPassword(c.Request.Context(), input.Token, input.NewPassword); err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	WriteData(c, http.StatusOK, dto.MessageData{Message: "Password reset successfully."})
+}
+
 func (h *AuthHandler) handleError(c *gin.Context, err error) {
 	var appErr *dto.AppError
 	if errors.As(err, &appErr) {

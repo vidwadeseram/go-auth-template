@@ -64,6 +64,9 @@ func main() {
 	authGroup.POST("/logout", authHandler.Logout)
 	authGroup.POST("/refresh", authHandler.Refresh)
 	authGroup.GET("/me", authMiddleware.RequireAuth(), authHandler.Me)
+	authGroup.POST("/verify-email", authHandler.VerifyEmail)
+	authGroup.POST("/forgot-password", authHandler.ForgotPassword)
+	authGroup.POST("/reset-password", authHandler.ResetPassword)
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.AppPort),
