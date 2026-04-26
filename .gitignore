@@ -1,0 +1,7 @@
+.env
+bin/
+dist/
+coverage.out
+vendor/
+tmp/
+.DS_Store
