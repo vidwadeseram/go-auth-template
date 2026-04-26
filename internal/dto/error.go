@@ -37,3 +37,5 @@ func AsValidationErrors(err error, target *validator.ValidationErrors) bool {
 	*target = value
 	return true
 }
+
+var ErrNotFound = fmt.Errorf("record not found")
