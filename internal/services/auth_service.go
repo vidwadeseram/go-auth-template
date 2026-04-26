@@ -281,3 +281,37 @@ func (s *AuthService) ResetPassword(ctx context.Context, token string, newPasswo
 	}
 	return nil
 }
+
+func (s *AuthService) ListUsers(ctx context.Context) ([]dto.UserResponse, error) {
+	var users []models.User
+	if err := s.db.WithContext(ctx).Order("created_at desc").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	result := make([]dto.UserResponse, len(users))
+	for i, u := range users {
+		result[i] = dto.NewUserResponse(&u)
+	}
+	return result, nil
+}
+
+func (s *AuthService) GetUser(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, dto.ErrNotFound
+	}
+	return user, nil
+}
+
+func (s *AuthService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	result := s.db.WithContext(ctx).Delete(&models.User{}, userID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return dto.ErrNotFound
+	}
+	return nil
+}

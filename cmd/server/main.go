@@ -50,6 +50,8 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService)
 	healthHandler := handlers.NewHealthHandler(db)
 	authMiddleware := middleware.NewAuthMiddleware(tokenService, userRepo)
+	rbacRepo := repository.NewRBACRepository(db)
+	adminHandler := handlers.NewAdminHandler(rbacRepo, authService, tokenService)
 
 	router := gin.New()
 	router.Use(gin.Recovery())
@@ -67,6 +69,18 @@ func main() {
 	authGroup.POST("/verify-email", authHandler.VerifyEmail)
 	authGroup.POST("/forgot-password", authHandler.ForgotPassword)
 	authGroup.POST("/reset-password", authHandler.ResetPassword)
+
+	adminGroup := router.Group("/api/v1/admin")
+	adminGroup.Use(authMiddleware.RequireAuth())
+	adminGroup.GET("/roles", adminHandler.ListRoles)
+	adminGroup.GET("/permissions", adminHandler.ListPermissions)
+	adminGroup.GET("/roles/:role_id/permissions", adminHandler.GetRolePermissions)
+	adminGroup.POST("/roles/permissions", adminHandler.AssignPermissionToRole)
+	adminGroup.GET("/users", adminHandler.ListUsers)
+	adminGroup.GET("/users/:user_id", adminHandler.GetUser)
+	adminGroup.DELETE("/users/:user_id", adminHandler.DeleteUser)
+	adminGroup.GET("/users/:user_id/permissions", adminHandler.GetUserPermissions)
+	adminGroup.POST("/users/roles", adminHandler.AssignRoleToUser)
 
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.AppPort),
