@@ -64,6 +64,7 @@ func main() {
 	router.StaticFile("/docs", "./static/swagger.html")
 
 	authGroup := router.Group("/api/v1/auth")
+	authGroup.Use(middleware.RateLimit(1/60.0, 5))
 	authGroup.POST("/register", authHandler.Register)
 	authGroup.POST("/login", authHandler.Login)
 	authGroup.POST("/logout", authHandler.Logout)
