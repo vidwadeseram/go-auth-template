@@ -16,7 +16,7 @@ echo "============================================"
 
 echo ""
 echo "--- Health ---"
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/../health")
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8005/health")
 [ "$STATUS" = "200" ] && pass "GET /health → 200" || fail "GET /health → 200" "got $STATUS"
 
 echo ""
@@ -24,7 +24,7 @@ echo "--- Auth: Register + Login ---"
 REGISTER=$(curl -s -X POST "$BASE_URL/auth/register" \
   -H "Content-Type: application/json" \
   -d '{"email":"testuser@example.com","password":"SecurePass123!","first_name":"Test","last_name":"User"}')
-echo "$REGISTER" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'id' in d['data']" && pass "POST /auth/register" || fail "POST /auth/register" "$REGISTER"
+echo "$REGISTER" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'user' in d['data']" && pass "POST /auth/register" || fail "POST /auth/register" "$REGISTER"
 
 LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" -d '{"email":"testuser@example.com","password":"SecurePass123!"}')
