@@ -64,14 +64,14 @@ func main() {
 	router.StaticFile("/docs", "./static/swagger.html")
 
 	authGroup := router.Group("/api/v1/auth")
-	authGroup.Use(middleware.RateLimit(1/60.0, 5))
-	authGroup.POST("/register", authHandler.Register)
-	authGroup.POST("/login", authHandler.Login)
+	loginLimiter := middleware.RateLimit(1.0/60.0, 10)
+	authGroup.POST("/register", loginLimiter, authHandler.Register)
+	authGroup.POST("/login", loginLimiter, authHandler.Login)
 	authGroup.POST("/logout", authHandler.Logout)
 	authGroup.POST("/refresh", authHandler.Refresh)
 	authGroup.GET("/me", authMiddleware.RequireAuth(), authHandler.Me)
 	authGroup.POST("/verify-email", authHandler.VerifyEmail)
-	authGroup.POST("/forgot-password", authHandler.ForgotPassword)
+	authGroup.POST("/forgot-password", loginLimiter, authHandler.ForgotPassword)
 	authGroup.POST("/reset-password", authHandler.ResetPassword)
 
 	adminGroup := router.Group("/api/v1/admin")
