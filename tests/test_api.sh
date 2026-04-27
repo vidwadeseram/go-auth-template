@@ -70,7 +70,7 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/admin/roles" -H "Auth
 
 echo ""
 echo "--- RBAC: Assign super_admin + test ---"
-CONTAINER=$(docker ps --filter "publish=8005" --format "{{.Names}}" | head -1)
+CONTAINER=$(docker compose ps -q db 2>/dev/null | head -1)
 if [ -n "$CONTAINER" ]; then
   docker exec "$CONTAINER" psql -U postgres -d "$DB_NAME" -c "INSERT INTO roles (id, name, description) VALUES ('11111111-1111-1111-1111-111111111111', 'super_admin', 'Super administrator'), ('22222222-2222-2222-2222-222222222222', 'admin', 'Administrator'), ('33333333-3333-3333-3333-333333333333', 'user', 'Standard user') ON CONFLICT (name) DO NOTHING;" 2>/dev/null || true
   ADMIN_USER_ID=$(curl -s "$BASE_URL/auth/me" -H "Authorization: Bearer $ADMIN_TOKEN" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
